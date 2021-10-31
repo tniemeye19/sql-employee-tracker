@@ -15,7 +15,7 @@ db.connect(function(err){
     mainMenu();
 })
 
-function mainMenu() {
+function mainMenu(departmentList) {
     inquirer
         .prompt(
             {
@@ -283,7 +283,6 @@ function updateDepartmentsTable () {
             actual_id = id;
             actual_name = name;
             departmentList.push(actual_name);
-            console.log(departmentList);
         }
     })
 }
