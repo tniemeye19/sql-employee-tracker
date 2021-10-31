@@ -11,6 +11,7 @@ db.connect(function(err){
         console.log('Error connecting to db')
     }
     console.log('connected to the db successfully')
+    // updateDepartmentsTable();
     mainMenu();
 })
 
@@ -71,13 +72,14 @@ function mainMenu() {
                         }
                     )
                     .then(answer => {
-                        const depName = answer.departmentName;
+                        let depName = answer.departmentName;
                         addDepartment(depName);
                     });
                     break;
                 case 'Add a role':
+                    updateDepartmentsTable();
                     inquirer
-                    .prompt(
+                    .prompt([
                         {
                             type: 'input',
                             name: 'roleName',
@@ -106,7 +108,7 @@ function mainMenu() {
                             type: 'list',
                             name: 'roleDepartment',
                             message: 'What department would you like this role to fall under?',
-                            choices: [],
+                            choices: departmentList,
                             validate: nameInput => {
                                 if (nameInput) {
                                     return true;
@@ -115,10 +117,12 @@ function mainMenu() {
                                 }
                             }
                         }
-                    )
+                    ])
                     .then(answer => {
-                        const role = answer.roleName;
-                        addRole(role);
+                        let r = answer.roleName;
+                        let rSalary = answer.roleSalary;
+                        let rDepartment = answer.roleDepartment;
+                        addRole(r, rSalary, rDepartment);
                     });
                     break;
                 case 'Add an employee':
@@ -221,13 +225,17 @@ function addDepartment(depName) {
         ADDING ${depName} TO DEPARTMENT LIST
         ====================================`);
         console.log('\n');
-        console.table(rows);
-        console.log('\n');
         mainMenu();
     })
 }
-function addRole() {
-    console.log('Inside add role');
+function addRole(r, rSalary, rDepartment) {
+    let title = r;
+    let salary = rSalary;
+    let department_name = rDepartment;
+    console.log(`
+    Title: ${title} \n
+    Salary: ${salary} \n
+    Department Name: ${department_name} \n`);
     // WHEN I choose to add a role
     // THEN I am prompted to enter 
        // the name,
@@ -264,18 +272,18 @@ function deleteEmployees() {
     console.log('Inside delete employees');
     mainMenu();
 }
+function updateDepartmentsTable () {
+    const sql = `SELECT * FROM departments`;
 
-
-
-   
-
-   
-
-   
-
-   
-   
-
-   
-
-   
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        let departmentList = [];
+        for (let i = 0; i < rows.length; i++) {
+            let { id, name } = rows[i];
+            actual_id = id;
+            actual_name = name;
+            departmentList.push(actual_name);
+            console.log(departmentList);
+        }
+    })
+}
