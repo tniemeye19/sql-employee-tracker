@@ -33,7 +33,8 @@ function mainMenu() {
                     'Update employee managers',
                     'Delete department',
                     'Delete role',
-                    'Delete employees']
+                    'Delete employees',
+                    'Exit']
             }
         )
         .then(answer => {
@@ -54,10 +55,71 @@ function mainMenu() {
                     viewEmployeesByDepartment();
                     break;
                 case 'Add a department':
-                    addDepartment();
+                    inquirer
+                    .prompt(
+                        {
+                            type: 'input',
+                            name: 'departmentName',
+                            message: 'What would you like to name the new department?',
+                            validate: nameInput => {
+                                if (nameInput) {
+                                    return true;
+                                } else {
+                                    console.log('Please enter the name of the department you would like to create!');
+                                }
+                            }
+                        }
+                    )
+                    .then(answer => {
+                        const depName = answer.departmentName;
+                        addDepartment(depName);
+                    });
                     break;
                 case 'Add a role':
-                    addRole();
+                    inquirer
+                    .prompt(
+                        {
+                            type: 'input',
+                            name: 'roleName',
+                            message: 'What would you like to name the new role?',
+                            validate: nameInput => {
+                                if (nameInput) {
+                                    return true;
+                                } else {
+                                    console.log('Please enter the name of the role you would like to create!');
+                                }
+                            }
+                        },
+                        {
+                            type: 'input',
+                            name: 'roleSalary',
+                            message: 'What would you like the salary to be for this role?',
+                            validate: nameInput => {
+                                if (nameInput) {
+                                    return true;
+                                } else {
+                                    console.log('Please enter the salary you would like this role to have!');
+                                }
+                            }
+                        },
+                        {
+                            type: 'list',
+                            name: 'roleDepartment',
+                            message: 'What department would you like this role to fall under?',
+                            choices: [],
+                            validate: nameInput => {
+                                if (nameInput) {
+                                    return true;
+                                } else {
+                                    console.log('Please enter the department you would like this role to fall under!');
+                                }
+                            }
+                        }
+                    )
+                    .then(answer => {
+                        const role = answer.roleName;
+                        addRole(role);
+                    });
                     break;
                 case 'Add an employee':
                     addEmployee();
@@ -74,6 +136,9 @@ function mainMenu() {
                 case 'Delete employees':
                     deleteEmployees();
                     break;
+                case 'Exit':
+                    db.destroy();
+                    process.exit(0);
                 default:
                     mainMenu();
             }
@@ -81,9 +146,6 @@ function mainMenu() {
 }
 
 function viewAllDepartments() {
-    // WHEN I choose to view all departments
-    // THEN I am presented with a formatted table showing 
-        // department names and department ids
     const sql = `SELECT * FROM departments`;
     db.query(sql, (err, rows) => {
         if (err) throw err;
@@ -100,47 +162,44 @@ function viewAllDepartments() {
     
 }
 function viewAllRoles() {
-    // WHEN I choose to view all roles
-    // THEN I am presented with the job title, role id, the department that role belongs to, and the salary for that role
-    const sql = `SELECT * FROM roles`;
+    const sql = `SELECT roles.id, roles.title, departments.name AS department_name, roles.salary
+                FROM roles
+                LEFT JOIN departments
+                ON roles.department_id = departments.id`;
     db.query(sql, (err, rows) => {
         if (err) throw err;
         console.log('\n');
         console.log(`
         =================
         VIEWING ALL ROLES
-        =================`)
-        console.log('\n')
+        =================`);
+        console.log('\n');
         console.table(rows);
         console.log('\n');
         mainMenu();
     })
 }
 function viewAllEmployees() {
-    // WHEN I choose to view all employees
-    // THEN I am presented with a formatted table showing
-        // employee data, including
-           // employee ids, 
-           // first names, 
-           // last names, 
-           //  ]job titles, 
-           // departments, 
-           // salaries, and
-           // managers that the employees report to
-    const sql = `SELECT * FROM employees`;
+    const sql = `SELECT e.id, e.first_name, e.last_name, roles.title AS role, departments.name as department, roles.salary AS salary, CONCAT(m.first_name, ' ', m.last_name) AS manager
+                FROM employees e
+                LEFT JOIN roles
+                ON e.role_id = roles.id
+                LEFT JOIN departments
+                ON roles.department_id = departments.id
+                LEFT JOIN employees m
+                ON m.id = e.manager_id`;
     db.query(sql, (err, rows) => {
         if (err) throw err;
         console.log('\n');
         console.log(`
         =====================
         VIEWING ALL EMPLOYEES
-        =====================`)
-        console.log('\n')
+        =====================`);
+        console.log('\n');
         console.table(rows);
         console.log('\n');
         mainMenu();
     })
-    mainMenu();
 }
 function viewEmployeesByManager() {
     console.log('Inside view employees by manager');
@@ -150,13 +209,22 @@ function viewEmployeesByDepartment() {
     console.log('Inside view employees by department');
     mainMenu();
 }
-function addDepartment() {
-    console.log('Inside add department');
-    // WHEN I choose to add a department
-    // THEN I am prompted to
-        // enter the name of the department and 
-        //that department is added to the database
-    mainMenu();
+function addDepartment(depName) {
+    const sql = `INSERT INTO departments (name)
+                VALUES
+                    ('${depName}')`;
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        ====================================
+        ADDING ${depName} TO DEPARTMENT LIST
+        ====================================`);
+        console.log('\n');
+        console.table(rows);
+        console.log('\n');
+        mainMenu();
+    })
 }
 function addRole() {
     console.log('Inside add role');
@@ -188,7 +256,7 @@ function deleteDepartment() {
     console.log('Inside delete department');
     mainMenu();
 }
-function deleteRole() {
+function deleteRoles() {
     console.log('Inside delete role');
     mainMenu();
 }
