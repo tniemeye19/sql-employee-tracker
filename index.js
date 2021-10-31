@@ -6,6 +6,11 @@ const Department = require('./lib/Department');
 const Employee = require('./lib/Employee');
 const Role = require('./lib/Role');
 
+let departmentNameList = [];
+let departmentIdList = [];
+let department_id;
+let information;
+
 db.connect(function(err){
     if(err) {
         console.log('Error connecting to db')
@@ -15,7 +20,7 @@ db.connect(function(err){
     mainMenu();
 })
 
-function mainMenu(departmentList) {
+function mainMenu() {
     inquirer
         .prompt(
             {
@@ -108,7 +113,7 @@ function mainMenu(departmentList) {
                             type: 'list',
                             name: 'roleDepartment',
                             message: 'What department would you like this role to fall under?',
-                            choices: departmentList,
+                            choices: departmentNameList,
                             validate: nameInput => {
                                 if (nameInput) {
                                     return true;
@@ -119,10 +124,10 @@ function mainMenu(departmentList) {
                         }
                     ])
                     .then(answer => {
-                        let r = answer.roleName;
-                        let rSalary = answer.roleSalary;
-                        let rDepartment = answer.roleDepartment;
-                        addRole(r, rSalary, rDepartment);
+                        let title = answer.roleName;
+                        let salary = answer.roleSalary;
+                        let departmentName = answer.roleDepartment;
+                        addRole(title, departmentName, salary);
                     });
                     break;
                 case 'Add an employee':
@@ -228,20 +233,40 @@ function addDepartment(depName) {
         mainMenu();
     })
 }
-function addRole(r, rSalary, rDepartment) {
-    let title = r;
-    let salary = rSalary;
-    let department_name = rDepartment;
-    console.log(`
-    Title: ${title} \n
-    Salary: ${salary} \n
-    Department Name: ${department_name} \n`);
-    // WHEN I choose to add a role
-    // THEN I am prompted to enter 
-       // the name,
-       // salary, and 
-       // department for the role and that role is added to the database
-    mainMenu();
+function addRole(title, departmentName, salary) {
+    console.log('Information', information)
+    console.log('DepartmentIdList: ', departmentIdList);
+    if (departmentName = 'Sales') {
+        department_id = 1;
+        addRoleSql(title, department_id, salary);
+    } else if (departmentName = 'Engineering') {
+        department_id = 2;
+        addRoleSql(title, department_id, salary);
+    } else if (departmentName = 'Finance') {
+        department_id = 3;
+        addRoleSql(title, department_id, salary);
+    } else if (departmentName = 'Legal') {
+        department_id = 4;
+        addRoleSql(title, department_id, salary);
+    } else {
+        // THIS IS WHERE I AM STUCK CURRENTLY
+        console.log('WTF');
+    }
+    function addRoleSql(title, department_id, salary) {
+        const sql = `INSERT INTO roles (title, department_id, salary)
+        VALUES
+            ('${title}', ${department_id}, '${salary}')`;
+        db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        =============================
+        ADDING ${title} TO ROLES LIST
+        =============================`);
+        console.log('\n');
+        mainMenu();
+        })
+    }
 }
 function addEmployee() {
     console.log('Inside add employee');
@@ -277,12 +302,15 @@ function updateDepartmentsTable () {
 
     db.query(sql, (err, rows) => {
         if (err) throw err;
-        let departmentList = [];
+        departmentNameList.length = 0;
+        departmentIdList.length = 0;
+        information = rows;
         for (let i = 0; i < rows.length; i++) {
             let { id, name } = rows[i];
             actual_id = id;
             actual_name = name;
-            departmentList.push(actual_name);
+            departmentNameList.push(actual_name);
+            departmentIdList.push(actual_id);
         }
     })
 }
