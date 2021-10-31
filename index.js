@@ -199,6 +199,28 @@ function mainMenu() {
                         updateEmployeeRole(empName, empRole);
                     })
                     break;
+                case 'Update employee managers':
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'eName',
+                            message: "Which employee's manager do you want to update?",
+                            choices: employeeNameList
+                        },
+                        {
+                            type: 'list',
+                            name: 'mName',
+                            message: "Who is the employee's new manager?",
+                            choices: employeeNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let employeeName = answer.eName;
+                        let managerName = answer.mName;
+                        updateEmployeeManagers(employeeName, managerName);
+                    })
+                    break;
                 case 'Delete department':
                     inquirer
                     .prompt([
@@ -214,11 +236,35 @@ function mainMenu() {
                         deleteDepartment(departmentDelete);
                     })
                     break;
-                case 'Delete roles':
-                    deleteRoles();
+                case 'Delete role':
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'delRole',
+                            message: 'Which role would you like to delete?',
+                            choices: roleNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let roleDelete = answer.delRole;
+                        deleteRoles(roleDelete);
+                    })
                     break;
                 case 'Delete employees':
-                    deleteEmployees();
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'delEmployee',
+                            message: 'Which employee would you like to delete?',
+                            choices: employeeNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let employeeDelete = answer.delEmployee;
+                        deleteEmployees(employeeDelete);
+                    })
                     break;
                 case 'Exit':
                     db.destroy();
@@ -354,9 +400,27 @@ function updateEmployeeRole(empName, empRole) {
         if (err) throw err;
         console.log('\n');
         console.log(`
-        =============================
+        ========================================
         UPDATING ${empName}'s ROLE TO ${empRole}
-        =============================`);
+        ========================================`);
+        console.log('\n');
+        mainMenu();
+    })
+}
+function updateEmployeeManagers(employeeName, managerName) {
+    employee_id = employeeNameList.indexOf(employeeName) + 1;
+    manager_id = employeeNameList.indexOf(managerName) + 1;
+
+    const sql = `UPDATE employees
+                SET manager_id = ${manager_id}
+                WHERE employees.id = ${employee_id}`;
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        ====================================================
+        UPDATING ${employeeName}'s MANAGER TO ${managerName}
+        ====================================================`);
         console.log('\n');
         mainMenu();
     })
@@ -371,20 +435,46 @@ function deleteDepartment(departmentDelete) {
         if (err) throw err;
         console.log('\n');
         console.log(`
-        =============================
+        =======================================
         DELETING DEPARTMENT ${departmentDelete}
-        =============================`);
+        =======================================`);
         console.log('\n');
         mainMenu();
     })
 }
-function deleteRoles() {
-    console.log('Inside delete role');
-    mainMenu();
+function deleteRoles(roleDelete) {
+    role_id = roleNameList.indexOf(roleDelete) + 1;
+
+    const sql = `DELETE FROM roles
+                WHERE roles.id = ${role_id}`;
+    
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        ===========================
+        DELETING ROLE ${roleDelete}
+        ===========================`);
+        console.log('\n');
+        mainMenu();
+    })
 }
-function deleteEmployees() {
-    console.log('Inside delete employees');
-    mainMenu();
+function deleteEmployees(employeeDelete) {
+    employee_id = employeeNameList.indexOf(employeeDelete) + 1;
+
+    const sql = `DELETE FROM employees
+                WHERE employees.id = ${employee_id}`;
+
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        ===================================
+        DELETING EMPLOYEE ${employeeDelete}
+        ===================================`);
+        console.log('\n');
+        mainMenu();
+    })
 }
 
 // ----------------------------UTILITY FUNCTIONS BELOW----------------------------------------
