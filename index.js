@@ -8,19 +8,24 @@ const Role = require('./lib/Role');
 
 let departmentNameList = [];
 let departmentIdList = [];
+let roleNameList = [];
+let employeeNameList = [];
 let department_id;
-let information;
+let role_id;
+let manager_id;
 
 db.connect(function(err){
     if(err) {
         console.log('Error connecting to db')
     }
     console.log('connected to the db successfully')
-    // updateDepartmentsTable();
     mainMenu();
 })
 
 function mainMenu() {
+    updateDepartmentsLists();
+    updateRolesLists();
+    updateEmployeesLists();
     inquirer
         .prompt(
             {
@@ -44,6 +49,7 @@ function mainMenu() {
             }
         )
         .then(answer => {
+
             switch(answer.choice){
                 case 'View all departments':
                     viewAllDepartments();
@@ -82,7 +88,6 @@ function mainMenu() {
                     });
                     break;
                 case 'Add a role':
-                    updateDepartmentsTable();
                     inquirer
                     .prompt([
                         {
@@ -113,14 +118,7 @@ function mainMenu() {
                             type: 'list',
                             name: 'roleDepartment',
                             message: 'What department would you like this role to fall under?',
-                            choices: departmentNameList,
-                            validate: nameInput => {
-                                if (nameInput) {
-                                    return true;
-                                } else {
-                                    console.log('Please enter the department you would like this role to fall under!');
-                                }
-                            }
+                            choices: departmentNameList
                         }
                     ])
                     .then(answer => {
@@ -131,13 +129,90 @@ function mainMenu() {
                     });
                     break;
                 case 'Add an employee':
-                    addEmployee();
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'input',
+                            name: 'firstName',
+                            message: 'What is the employees first name?',
+                            validate: nameInput => {
+                                if (nameInput) {
+                                    return true;
+                                } else {
+                                    console.log('Please enter the employees first name!');
+                                }
+                            }
+                        },
+                        {
+                            type: 'input',
+                            name: 'lastName',
+                            message: 'What is the employees last name?',
+                            validate: nameInput => {
+                                if (nameInput) {
+                                    return true;
+                                } else {
+                                    console.log('Please enter the employees last name!');
+                                }
+                            }
+                        },
+                        {
+                            type: 'list',
+                            name: 'empRole',
+                            message: 'What is the employees role?',
+                            choices: roleNameList
+                        },
+                        {
+                            type: 'list',
+                            name: 'assignedManager',
+                            message: 'Who does this employee report to?',
+                            choices: employeeNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let first_name = answer.firstName;
+                        let last_name = answer.lastName;
+                        let roleName = answer.empRole;
+                        let manager = answer.assignedManager;
+                        addEmployee(first_name, last_name, roleName, manager);
+                    })
+
                     break;
                 case 'Update an employee role':
-                    updateEmployeeRole();
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'empToUpdateRole',
+                            message: 'Which employee would you like to update the role for?',
+                            choices: employeeNameList
+                        },
+                        {
+                            type: 'list',
+                            name: 'newRole',
+                            message: 'What is the employees new role?',
+                            choices: roleNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let empName = answer.empToUpdateRole;
+                        let empRole = answer.newRole;
+                        updateEmployeeRole(empName, empRole);
+                    })
                     break;
                 case 'Delete department':
-                    deleteDepartment();
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'delDep',
+                            message: 'Which department would you like to delete?',
+                            choices: departmentNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let departmentDelete = answer.delDep;
+                        deleteDepartment(departmentDelete);
+                    })
                     break;
                 case 'Delete roles':
                     deleteRoles();
@@ -234,60 +309,74 @@ function addDepartment(depName) {
     })
 }
 function addRole(title, departmentName, salary) {
-    console.log('Information', information)
-    console.log('DepartmentIdList: ', departmentIdList);
-    if (departmentName = 'Sales') {
-        department_id = 1;
-        addRoleSql(title, department_id, salary);
-    } else if (departmentName = 'Engineering') {
-        department_id = 2;
-        addRoleSql(title, department_id, salary);
-    } else if (departmentName = 'Finance') {
-        department_id = 3;
-        addRoleSql(title, department_id, salary);
-    } else if (departmentName = 'Legal') {
-        department_id = 4;
-        addRoleSql(title, department_id, salary);
-    } else {
-        // THIS IS WHERE I AM STUCK CURRENTLY
-        console.log('WTF');
-    }
-    function addRoleSql(title, department_id, salary) {
-        const sql = `INSERT INTO roles (title, department_id, salary)
-        VALUES
-            ('${title}', ${department_id}, '${salary}')`;
-        db.query(sql, (err, rows) => {
+    department_id = departmentNameList.indexOf(departmentName) + 1;
+    
+    const sql = `INSERT INTO roles (title, department_id, salary)
+    VALUES
+        ('${title}', ${department_id}, '${salary}')`;
+    db.query(sql, (err, rows) => {
+    if (err) throw err;
+    console.log('\n');
+    console.log(`
+    =============================
+    ADDING ${title} TO ROLES LIST
+    =============================`);
+    console.log('\n');
+    mainMenu();
+    })
+}
+function addEmployee(first_name, last_name, roleName, manager) {
+    role_id = roleNameList.indexOf(roleName) + 1;
+    manager_id = employeeNameList.indexOf(manager) + 1;
+
+    const sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id)
+                VALUES
+                    ('${first_name}', '${last_name}', ${role_id}, ${manager_id})`;
+    db.query(sql, (err, rows) => {
         if (err) throw err;
         console.log('\n');
         console.log(`
         =============================
-        ADDING ${title} TO ROLES LIST
+        ADDING ${first_name} ${last_name} TO EMPLOYEE LIST
         =============================`);
         console.log('\n');
         mainMenu();
-        })
-    }
+    })
 }
-function addEmployee() {
-    console.log('Inside add employee');
-    // WHEN I choose to add an employee
-    // THEN I am prompted to enter the 
-       // employee’s first name, 
-       // last name,
-       // role, and
-       // manager and that employee is added to the database
-    mainMenu();
+function updateEmployeeRole(empName, empRole) {
+    employee_id = employeeNameList.indexOf(empName) + 1;
+    role_id = roleNameList.indexOf(empRole) + 1;
+
+    const sql = `UPDATE employees
+                SET role_id = ${role_id}
+                WHERE employees.id = ${employee_id}`;
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        =============================
+        UPDATING ${empName}'s ROLE TO ${empRole}
+        =============================`);
+        console.log('\n');
+        mainMenu();
+    })
 }
-function updateEmployeeRole() {
-    console.log('Inside update employee');
-    // WHEN I choose to update an employee role
-    // THEN I am prompted to select an employee to update and
-       // their new role and this information is updated in the database
-    mainMenu();
-}
-function deleteDepartment() {
-    console.log('Inside delete department');
-    mainMenu();
+function deleteDepartment(departmentDelete) {
+    department_id = departmentNameList.indexOf(departmentDelete) + 1;
+
+    const sql = `DELETE FROM departments
+                WHERE departments.id = ${department_id}`;
+
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        =============================
+        DELETING DEPARTMENT ${departmentDelete}
+        =============================`);
+        console.log('\n');
+        mainMenu();
+    })
 }
 function deleteRoles() {
     console.log('Inside delete role');
@@ -297,20 +386,51 @@ function deleteEmployees() {
     console.log('Inside delete employees');
     mainMenu();
 }
-function updateDepartmentsTable () {
+
+// ----------------------------UTILITY FUNCTIONS BELOW----------------------------------------
+
+// USED IN mainMenu switch statement to obtain data for use in addRole() function
+function updateDepartmentsLists() {
     const sql = `SELECT * FROM departments`;
 
     db.query(sql, (err, rows) => {
         if (err) throw err;
         departmentNameList.length = 0;
         departmentIdList.length = 0;
-        information = rows;
         for (let i = 0; i < rows.length; i++) {
             let { id, name } = rows[i];
-            actual_id = id;
-            actual_name = name;
+            let actual_id = id;
+            let actual_name = name;
             departmentNameList.push(actual_name);
             departmentIdList.push(actual_id);
+        }
+    })
+}
+// USED IN mainMenu switch statement to obtain data for use in addEmployee() function
+function updateRolesLists() {
+    const sql = `SELECT * FROM roles`;
+
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        roleNameList.length = 0;
+        for (let i = 0; i < rows.length; i++) {
+            let { title } = rows[i];
+            let actual_role = title;
+            roleNameList.push(actual_role);
+        }
+    })
+}
+// USED IN mainMenu switch statement to obtain data for use in addEmployee() function
+function updateEmployeesLists() {
+    const sql = `SELECT * FROM employees`;
+
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        employeeNameList.length = 0;
+        for (let i = 0; i < rows.length; i++) {
+            let { first_name, last_name } = rows[i];
+            let actual_full_name = `${first_name} ${last_name}`;
+            employeeNameList.push(actual_full_name);
         }
     })
 }
