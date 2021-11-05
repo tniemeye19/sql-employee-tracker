@@ -2,10 +2,6 @@ const db = require('./db/connection');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 
-const Department = require('./lib/Department');
-const Employee = require('./lib/Employee');
-const Role = require('./lib/Role');
-
 let departmentNameList = [];
 let departmentIdList = [];
 let roleNameList = [];
@@ -61,7 +57,19 @@ function mainMenu() {
                     viewAllEmployees();
                     break;
                 case 'View employees by manager':
-                    viewEmployeesByManager();
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'managerSelect',
+                            message: "Which manager's employees would you like to see?",
+                            choices: employeeNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let selectedManager = answer.managerSelect;
+                        viewEmployeesByManager(selectedManager);
+                    })
                     break;
                 case 'View employees by department':
                     viewEmployeesByDepartment();
@@ -331,9 +339,25 @@ function viewAllEmployees() {
         mainMenu();
     })
 }
-function viewEmployeesByManager() {
-    console.log('Inside view employees by manager');
-    mainMenu();
+function viewEmployeesByManager(selectedManager) {
+    manager_id = employeeNameList.indexOf(selectedManager) + 1;
+    const sql = `SELECT employees.id, employees.first_name, employees.last_name, departments.name AS department, roles.title 
+                FROM employees 
+                LEFT JOIN roles on roles.id = employees.role_id 
+                LEFT JOIN departments ON departments.id = roles.department_id 
+                WHERE manager_id = ${manager_id}`;
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        ==============================================
+        VIEWING THE EMPLOYEES UNDER ${selectedManager}
+        ==============================================`);
+        console.log('\n');
+        console.table(rows);
+        console.log('\n');
+        mainMenu();
+    })
 }
 function viewEmployeesByDepartment() {
     console.log('Inside view employees by department');
