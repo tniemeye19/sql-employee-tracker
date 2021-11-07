@@ -72,7 +72,19 @@ function mainMenu() {
                     })
                     break;
                 case 'View employees by department':
-                    viewEmployeesByDepartment();
+                    inquirer
+                    .prompt([
+                        {
+                            type: 'list',
+                            name: 'departmentSelect',
+                            message: "Which department's employees would you like to view?",
+                            choices: departmentNameList
+                        }
+                    ])
+                    .then(answer => {
+                        let departmentName = answer.departmentSelect;
+                        viewEmployeesByDepartment(departmentName);
+                    })
                     break;
                 case 'Add a department':
                     inquirer
@@ -359,9 +371,26 @@ function viewEmployeesByManager(selectedManager) {
         mainMenu();
     })
 }
-function viewEmployeesByDepartment() {
-    console.log('Inside view employees by department');
-    mainMenu();
+function viewEmployeesByDepartment(departmentName) {
+    department_id = departmentNameList.indexOf(departmentName) + 1;
+
+    const sql = `SELECT employees.id, employees.first_name, employees.last_name, departments.name AS department, roles.title
+                FROM employees
+                LEFT JOIN roles on roles.id = employees.role_id
+                LEFT JOIN departments ON departments.id = roles.department_id
+                WHERE department_id = ${department_id}`;
+    db.query(sql, (err, rows) => {
+        if (err) throw err;
+        console.log('\n');
+        console.log(`
+        =====================================================
+        VIEWING EMPLOYEES IN THE ${departmentName} DEPARTMENT
+        =====================================================`);
+        console.log('\n');
+        console.table(rows);
+        console.log('\n');
+        mainMenu();
+    })
 }
 function addDepartment(depName) {
     const sql = `INSERT INTO departments (name)
