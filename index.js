@@ -51,7 +51,7 @@ function mainMenu() {
             }
         )
         .then(answer => {
-
+            console.clear();
             switch(answer.choice){
                 case 'View all departments':
                     viewAllDepartments();
